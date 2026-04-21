@@ -1,0 +1,1 @@
+# MagicAI MCP Package
