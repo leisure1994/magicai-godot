@@ -25,11 +25,13 @@ func _process(_delta: float) -> void:
 			continue
 		var available = c.get_available_bytes()
 		if available > 0:
-			var raw = c.get_utf8_string(available)
+			var raw_bytes = c.get_data(available)
+			var raw = raw_bytes[1].get_string_from_utf8()
 			var cmd = JSON.parse_string(raw)
 			if cmd:
 				var result = _handle_command(cmd)
-				c.put_utf8_string(JSON.stringify(result))
+				var resp = (JSON.stringify(result) + "\n").to_utf8_buffer()
+				c.put_data(resp)
 
 func _handle_command(cmd: Dictionary) -> Dictionary:
 	var action = cmd.get("action", "")

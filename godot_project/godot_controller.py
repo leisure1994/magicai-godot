@@ -14,16 +14,19 @@ def send(action: str, **kwargs) -> dict:
     """发送指令到 Godot 编辑器插件"""
     cmd = {"action": action, **kwargs}
     try:
-        with socket.create_connection((GODOT_HOST, GODOT_PORT), timeout=5) as s:
-            s.sendall(json.dumps(cmd).encode("utf-8"))
-            s.shutdown(socket.SHUT_WR)
-            response = b""
-            while True:
-                chunk = s.recv(4096)
-                if not chunk:
-                    break
-                response += chunk
-        return json.loads(response.decode("utf-8")) if response else {"ok": True}
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(5)
+        s.connect((GODOT_HOST, GODOT_PORT))
+        s.sendall(json.dumps(cmd).encode("utf-8"))
+        s.settimeout(5)
+        response = b""
+        while b"\n" not in response:
+            chunk = s.recv(4096)
+            if not chunk:
+                break
+            response += chunk
+        s.close()
+        return json.loads(response.decode("utf-8").strip())
     except ConnectionRefusedError:
         return {"ok": False, "error": "无法连接 Godot，请确认编辑器已启动且插件已启用"}
     except Exception as e:
